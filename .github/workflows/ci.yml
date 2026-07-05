@@ -1,0 +1,46 @@
+name: CI
+
+# Runs on every push and every pull request targeting main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-compile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install flake8
+
+      # Catches syntax errors in every .py file before anything else runs.
+      # This is the check that would have caught a broken f-string or a
+      # typo instantly, instead of failing at 2am when the DAG runs.
+      - name: Check for syntax errors (py_compile)
+        run: |
+          python -m compileall -q src dags dashboard scripts
+
+      # flake8 catches real bugs (unused imports, undefined names,
+      # unreachable code) separately from pure style nitpicks (line length,
+      # spacing). We fail the build on the former and only warn on the latter,
+      # so the pipeline stays useful instead of blocking on cosmetics.
+      - name: Lint for real errors (undefined names, syntax issues)
+        run: |
+          flake8 src dags dashboard scripts --select=E9,F63,F7,F82 --show-source
+
+      - name: Lint for style (warnings only, does not fail the build)
+        run: |
+          flake8 src dags dashboard scripts --max-line-length=100 --exit-zero

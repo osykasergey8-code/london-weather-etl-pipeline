@@ -1,0 +1,10 @@
+pandas==2.2.2
+streamlit==1.36.0
+requests==2.32.3
+
+# Only needed if you want to run/test the DAG locally without Docker.
+# Airflow is heavy and has its own constraints file; installing it via
+# plain pip sometimes fails. If that happens, skip it and just use the
+# Docker setup (docker-compose.yml) for the Airflow part, and use
+# scripts/run_pipeline_locally.py to test extract/transform/load on their own.
+apache-airflow==2.9.2

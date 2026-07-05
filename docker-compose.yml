@@ -1,0 +1,28 @@
+services:
+  # Container A: Apache Airflow orchestrator - runs the hourly ETL DAG
+  airflow:
+    image: apache/airflow:2.9.2-python3.10
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - DB_PATH=/opt/airflow/data/weather.db
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/plugins/src
+      - ./data:/opt/airflow/data
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "pip install --no-cache-dir requests==2.32.3 pandas==2.2.2 && airflow standalone"
+
+  # Container B: Streamlit dashboard - reads the same SQLite file the DAG writes to
+  dashboard:
+    build: ./dashboard
+    volumes:
+      - ./dashboard:/app
+      - ./data:/app/data
+    working_dir: /app
+    environment:
+      - DB_PATH=/app/data/weather.db
+    command: streamlit run app.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
